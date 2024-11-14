@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html translate="no">
+<head>
+    <title>{{ filename }} - 읽기</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="google" content="notranslate">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            line-height: 1.8;
+            background-color: #ffffff;
+            color: #333333;
+        }
+
+        body.dark-mode {
+            background-color: #1C2331;
+            color: #E7E9EF;
+        }
+
+        .content {
+            max-width: 800px;
+            margin: 70px auto;
+            padding: 20px;
+            font-size: var(--text-size, 16px);
+        }
+
+        /* 번역 방지를 위한 클래스 */
+        .notranslate {
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+
+        /* 문장 스타일 */
+        .sentence {
+            cursor: pointer;
+            border-radius: 4px;
+            padding: 0 4px;
+            transition: background-color 0.2s ease;
+        }
+
+        .sentence:hover {
+            background-color: rgba(0, 0, 0, 0.05);
+        }
+
+        .dark-mode .sentence:hover {
+            background-color: #2A354B;
+        }
+
+        /* 팝업 스타일 */
+        .translation-popup {
+            display: block;
+            margin: 8px 0;
+            padding: 8px;
+            border-radius: 6px;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+            border: 1px solid #e2e8f0;
+            background-color: #f8f9fa;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .translation-popup:hover {
+            background-color: #e9ecef;
+        }
+
+        .dark-mode .translation-popup {
+            background-color: #232C3E;
+            border-color: #2A354B;
+        }
+
+        .dark-mode .translation-popup:hover {
+            background-color: #2A354B;
+        }
+
+        /* 팝업의 번역 가능한 텍스트 */
+        .translatable {
+            -webkit-user-select: text;
+            -moz-user-select: text;
+            -ms-user-select: text;
+            user-select: text;
+            font-size: 0.95em;
+            color: #4a5568;
+        }
+
+        .dark-mode .translatable {
+            color: #C2C9D6;
+        }
+
+        /* 인용구 스타일 */
+        .quoted {
+            color: #805ad5;
+        }
+
+        .dark-mode .quoted {
+            color: #9BA5BB;
+        }
+
+        /* 페이지 컨트롤 */
+        .controls {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background-color: rgba(255, 255, 255, 0.95);
+            padding: 20px;
+            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+            z-index: 1000;
+        }
+
+        .dark-mode .controls {
+            background-color: rgba(35, 44, 62, 0.95);
+            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .controls.hidden {
+            transform: translateY(100%);
+        }
+
+        .controls-inner {
+            max-width: 800px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* 버튼 스타일 */
+        .control-btn {
+            padding: 8px 16px;
+            border: 1px solid #e2e8f0;
+            background-color: transparent;
+            color: #333333;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .control-btn:hover {
+            background-color: #f8f9fa;
+        }
+
+        .control-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .dark-mode .control-btn {
+            color: #E7E9EF;
+            border-color: #2A354B;
+        }
+
+        .dark-mode .control-btn:hover {
+            background-color: #2A354B;
+        }
+
+        @media (max-width: 768px) {
+            .content {
+                padding: 15px;
+                margin-bottom: 100px;
+            }
+        }
+    </style>
+</head>
+<body class="notranslate">
+    <div class="content">
+        <div class="text-content">
+            <!-- 텍스트 내용이 여기에 동적으로 삽입됩니다 -->
+        </div>
+    </div>
+
+    <div class="controls">
+        <div class="controls-inner">
+            <button class="control-btn" id="prevPage" disabled>이전</button>
+            <span class="page-info">1/1</span>
+            <button class="control-btn" id="nextPage" disabled>다음</button>
+        </div>
+    </div>
+
+<script>
+    // 전역 변수
+    let currentPage = 0;
+    let pages = [];
+    let isDarkMode = false;
+    const pageHeight = window.innerHeight - 200;
+
+    // HTML 엔티티를 디코딩하는 함수 추가
+    function decodeHTMLEntities(text) {
+        const textArea = document.createElement('textarea');
+        textArea.innerHTML = text;
+        return textArea.value;
+    }
+
+    // 텍스트를 문장으로 분리
+    function splitIntoSentences(text) {
+        return text.split(/(?<=[.!?:])\s+/);
+    }
+
+    // 페이지 분할
+    function paginateText(text) {
+        const container = document.createElement('div');
+        container.style.position = 'absolute';
+        container.style.visibility = 'hidden';
+        container.style.width = `${document.querySelector('.content').offsetWidth}px`;
+        document.body.appendChild(container);
+
+        const sentences = splitIntoSentences(decodeHTMLEntities(text)); // 여기에 디코딩 추가
+        const pages = [];
+        let currentPage = [];
+        let currentHeight = 0;
+
+        sentences.forEach(sentence => {
+            const sentenceEl = document.createElement('span');
+            sentenceEl.textContent = sentence + ' ';
+            container.appendChild(sentenceEl);
+
+            if (container.offsetHeight > pageHeight) {
+                pages.push(currentPage.join(' '));
+                currentPage = [sentence];
+                container.innerHTML = '';
+                container.appendChild(sentenceEl);
+            } else {
+                currentPage.push(sentence);
+            }
+        });
+
+        if (currentPage.length > 0) {
+            pages.push(currentPage.join(' '));
+        }
+
+        document.body.removeChild(container);
+        return pages;
+    }
+
+    // 문장 렌더링
+    function renderSentence(sentence) {
+        const span = document.createElement('span');
+        span.className = 'sentence notranslate';
+        span.textContent = decodeHTMLEntities(sentence); // 디코딩 적용
+        
+        span.addEventListener('click', function() {
+            const existing = span.nextElementSibling;
+            if (existing?.classList.contains('translation-popup')) {
+                existing.remove();
+                return;
+            }
+
+            const popup = document.createElement('div');
+            popup.className = 'translation-popup';
+            const translatable = document.createElement('span');
+            translatable.className = 'translatable';
+            translatable.setAttribute('translate', 'yes');
+            translatable.textContent = decodeHTMLEntities(sentence); // 팝업에도 디코딩 적용
+            popup.appendChild(translatable);
+
+            if (span.nextSibling) {
+                span.parentNode.insertBefore(popup, span.nextSibling);
+            } else {
+                span.parentNode.appendChild(popup);
+            }
+
+            popup.addEventListener('click', () => popup.remove());
+        });
+
+        return span;
+    }
+
+    // 페이지 표시
+    function displayPage(pageIndex) {
+        const content = document.querySelector('.text-content');
+        content.innerHTML = '';
+
+        const sentences = splitIntoSentences(pages[pageIndex]);
+        sentences.forEach(sentence => {
+            content.appendChild(renderSentence(sentence));
+            content.appendChild(document.createTextNode(' '));
+        });
+
+        document.querySelector('.page-info').textContent = `${pageIndex + 1}/${pages.length}`;
+        
+        document.getElementById('prevPage').disabled = pageIndex === 0;
+        document.getElementById('nextPage').disabled = pageIndex === pages.length - 1;
+    }
+
+    // 초기화
+    window.addEventListener('load', function() {
+        const originalText = `{{ content }}`;
+        pages = paginateText(originalText);
+        displayPage(0);
+
+        // 이벤트 리스너 추가
+        document.getElementById('prevPage').addEventListener('click', () => {
+            if (currentPage > 0) {
+                currentPage--;
+                displayPage(currentPage);
+            }
+        });
+
+        document.getElementById('nextPage').addEventListener('click', () => {
+            if (currentPage < pages.length - 1) {
+                currentPage++;
+                displayPage(currentPage);
+            }
+        });
+
+        // 스와이프 이벤트
+        let touchStartX = 0;
+        document.addEventListener('touchstart', e => {
+            touchStartX = e.touches[0].screenX;
+        });
+
+        document.addEventListener('touchend', e => {
+            const touchEndX = e.changedTouches[0].screenX;
+            const diff = touchEndX - touchStartX;
+
+            if (Math.abs(diff) > 50) {
+                if (diff > 0 && currentPage > 0) {
+                    currentPage--;
+                    displayPage(currentPage);
+                } else if (diff < 0 && currentPage < pages.length - 1) {
+                    currentPage++;
+                    displayPage(currentPage);
+                }
+            }
+        });
+
+        // 다크모드 토글
+        const darkModeToggle = document.createElement('button');
+        darkModeToggle.className = 'control-btn';
+        darkModeToggle.textContent = '🌙';
+        darkModeToggle.style.marginLeft = '10px';
+        document.querySelector('.controls-inner').appendChild(darkModeToggle);
+
+        darkModeToggle.addEventListener('click', () => {
+            isDarkMode = !isDarkMode;
+            document.body.classList.toggle('dark-mode');
+            darkModeToggle.textContent = isDarkMode ? '🌞' : '🌙';
+        });
+    });
+
+    // 컨트롤 숨기기/보이기
+    let lastScrollY = window.scrollY;
+    let controlsTimeout;
+    
+    window.addEventListener('scroll', () => {
+        const controls = document.querySelector('.controls');
+        const currentScrollY = window.scrollY;
+
+        if (currentScrollY > lastScrollY) {
+            controls.classList.add('hidden');
+        } else {
+            controls.classList.remove('hidden');
+        }
+
+        lastScrollY = currentScrollY;
+
+        clearTimeout(controlsTimeout);
+        controlsTimeout = setTimeout(() => {
+            controls.classList.remove('hidden');
+        }, 1000);
+    });
+</script>
+</body>
+</html>
