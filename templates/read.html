@@ -12,11 +12,18 @@
             padding: 0;
         }
 
+        :root {
+            --text-size: 16px;
+            --line-height: 1.8;
+        }
+
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            line-height: 1.8;
+            line-height: var(--line-height);
             background-color: #ffffff;
             color: #333333;
+            overflow-x: hidden;
+            font-size: var(--text-size);
         }
 
         body.dark-mode {
@@ -24,22 +31,106 @@
             color: #E7E9EF;
         }
 
-        .content {
-            max-width: 800px;
-            margin: 70px auto;
+        /* Sidebar styles */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: -300px;
+            width: 300px;
+            height: 100%;
+            background-color: #ffffff;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+            z-index: 2000;
             padding: 20px;
-            font-size: var(--text-size, 16px);
         }
 
-        /* 번역 방지를 위한 클래스 */
-        .notranslate {
-            -webkit-user-select: none;
-            -moz-user-select: none;
-            -ms-user-select: none;
-            user-select: none;
+        .dark-mode .sidebar {
+            background-color: #232C3E;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.3);
         }
 
-        /* 문장 스타일 */
+        .sidebar.active {
+            transform: translateX(300px);
+        }
+
+        .sidebar-btn {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 10px;
+            border: none;
+            background-color: #f8f9fa;
+            color: #333333;
+            border-radius: 6px;
+            cursor: pointer;
+            text-align: left;
+            transition: background-color 0.2s ease;
+        }
+
+        .dark-mode .sidebar-btn {
+            background-color: #2A354B;
+            color: #E7E9EF;
+        }
+
+        .sidebar-btn:hover {
+            background-color: #e9ecef;
+        }
+
+        .dark-mode .sidebar-btn:hover {
+            background-color: #344054;
+        }
+
+        /* Settings Panel */
+        .settings-panel {
+            display: none;
+            padding: 20px;
+            background-color: #ffffff;
+            border-radius: 6px;
+            margin-top: 10px;
+        }
+
+        .dark-mode .settings-panel {
+            background-color: #2A354B;
+        }
+
+        .settings-panel.active {
+            display: block;
+        }
+
+        .settings-group {
+            margin-bottom: 15px;
+        }
+
+        .settings-label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+
+        .settings-input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #e2e8f0;
+            border-radius: 4px;
+            background-color: #ffffff;
+        }
+
+        .dark-mode .settings-input {
+            background-color: #1C2331;
+            border-color: #344054;
+            color: #E7E9EF;
+        }
+
+        /* Content styles */
+        .content {
+            max-width: none;
+            margin: 0;
+            padding: 20px;
+            transition: margin-left 0.3s ease;
+        }
+
+        /* Sentence styles */
         .sentence {
             cursor: pointer;
             border-radius: 4px;
@@ -55,7 +146,7 @@
             background-color: #2A354B;
         }
 
-        /* 팝업 스타일 */
+        /* Translation popup styles */
         .translation-popup {
             display: block;
             margin: 8px 0;
@@ -81,7 +172,6 @@
             background-color: #2A354B;
         }
 
-        /* 팝업의 번역 가능한 텍스트 */
         .translatable {
             -webkit-user-select: text;
             -moz-user-select: text;
@@ -95,19 +185,10 @@
             color: #C2C9D6;
         }
 
-        /* 인용구 스타일 */
-        .quoted {
-            color: #805ad5;
-        }
-
-        .dark-mode .quoted {
-            color: #9BA5BB;
-        }
-
-        /* 페이지 컨트롤 */
+        /* Controller styles */
         .controls {
             position: fixed;
-            bottom: 0;
+            bottom: -100px;
             left: 0;
             right: 0;
             background-color: rgba(255, 255, 255, 0.95);
@@ -122,8 +203,8 @@
             box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.3);
         }
 
-        .controls.hidden {
-            transform: translateY(100%);
+        .controls.active {
+            transform: translateY(-100px);
         }
 
         .controls-inner {
@@ -132,9 +213,10 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            gap: 20px;
         }
 
-        /* 버튼 스타일 */
+        /* Control buttons */
         .control-btn {
             padding: 8px 16px;
             border: 1px solid #e2e8f0;
@@ -143,9 +225,10 @@
             border-radius: 6px;
             cursor: pointer;
             transition: all 0.2s ease;
+            min-width: 70px;
         }
 
-        .control-btn:hover {
+        .control-btn:hover:not(:disabled) {
             background-color: #f8f9fa;
         }
 
@@ -159,53 +242,148 @@
             border-color: #2A354B;
         }
 
-        .dark-mode .control-btn:hover {
+        .dark-mode .control-btn:hover:not(:disabled) {
             background-color: #2A354B;
+        }
+
+        /* Page slider */
+        .page-slider {
+            flex-grow: 1;
+            height: 4px;
+            -webkit-appearance: none;
+            background-color: #e2e8f0;
+            border-radius: 2px;
+        }
+
+        .dark-mode .page-slider {
+            background-color: #344054;
+        }
+
+        .page-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            background-color: #4a5568;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        .dark-mode .page-slider::-webkit-slider-thumb {
+            background-color: #E7E9EF;
+        }
+
+        /* Corner button */
+        .corner-button {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            width: 40px;
+            height: 40px;
+            background-color: rgba(255, 255, 255, 0.9);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            z-index: 1500;
+            transition: background-color 0.2s ease;
+        }
+
+        .dark-mode .corner-button {
+            background-color: rgba(35, 44, 62, 0.9);
+            color: #E7E9EF;
+        }
+
+        .corner-button:hover {
+            background-color: rgba(255, 255, 255, 1);
+        }
+
+        .dark-mode .corner-button:hover {
+            background-color: rgba(35, 44, 62, 1);
         }
 
         @media (max-width: 768px) {
             .content {
                 padding: 15px;
-                margin-bottom: 100px;
+            }
+
+            .controls-inner {
+                padding: 0 15px;
             }
         }
     </style>
 </head>
 <body class="notranslate">
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <button class="sidebar-btn" id="returnMain">Return to Main</button>
+        <button class="sidebar-btn" id="readingSettings">Reading Screen Settings</button>
+        <div class="settings-panel">
+            <div class="settings-group">
+                <label class="settings-label">Font Family</label>
+                <select class="settings-input" id="fontFamily">
+                    <option value="-apple-system">System Default</option>
+                    <option value="serif">Serif</option>
+                    <option value="sans-serif">Sans Serif</option>
+                    <option value="monospace">Monospace</option>
+                </select>
+            </div>
+            <div class="settings-group">
+                <label class="settings-label">Font Size</label>
+                <input type="range" class="settings-input" id="fontSize" min="12" max="24" value="16">
+                <span id="fontSizeValue">16px</span>
+            </div>
+            <div class="settings-group">
+                <label class="settings-label">Line Height</label>
+                <input type="range" class="settings-input" id="lineHeight" min="1.2" max="2" step="0.1" value="1.8">
+                <span id="lineHeightValue">1.8</span>
+            </div>
+        </div>
+        <button class="sidebar-btn" id="darkModeToggle">Dark Mode</button>
+    </div>
+
+    <!-- Corner Button for PC -->
+    <div class="corner-button">☰</div>
+
+    <!-- Main Content -->
     <div class="content">
         <div class="text-content">
-            <!-- 텍스트 내용이 여기에 동적으로 삽입됩니다 -->
+            <!-- Text content will be dynamically inserted here -->
         </div>
     </div>
 
+    <!-- Controls -->
     <div class="controls">
         <div class="controls-inner">
             <button class="control-btn" id="prevPage" disabled>이전</button>
+            <input type="range" class="page-slider" id="pageSlider" min="1" max="1" value="1">
             <span class="page-info">1/1</span>
             <button class="control-btn" id="nextPage" disabled>다음</button>
         </div>
     </div>
 
 <script>
-    // 전역 변수
+    // Global variables
     let currentPage = 0;
     let pages = [];
     let isDarkMode = false;
     const pageHeight = window.innerHeight - 200;
+    let touchStartY = 0;
+    let touchStartX = 0;
 
-    // HTML 엔티티를 디코딩하는 함수 추가
+    // Utility functions
     function decodeHTMLEntities(text) {
         const textArea = document.createElement('textarea');
         textArea.innerHTML = text;
         return textArea.value;
     }
 
-    // 텍스트를 문장으로 분리
     function splitIntoSentences(text) {
         return text.split(/(?<=[.!?:])\s+/);
     }
 
-    // 페이지 분할
+    // Page management
     function paginateText(text) {
         const container = document.createElement('div');
         container.style.position = 'absolute';
@@ -213,7 +391,7 @@
         container.style.width = `${document.querySelector('.content').offsetWidth}px`;
         document.body.appendChild(container);
 
-        const sentences = splitIntoSentences(decodeHTMLEntities(text)); // 여기에 디코딩 추가
+        const sentences = splitIntoSentences(decodeHTMLEntities(text));
         const pages = [];
         let currentPage = [];
         let currentHeight = 0;
@@ -241,11 +419,10 @@
         return pages;
     }
 
-    // 문장 렌더링
     function renderSentence(sentence) {
         const span = document.createElement('span');
         span.className = 'sentence notranslate';
-        span.textContent = decodeHTMLEntities(sentence); // 디코딩 적용
+        span.textContent = decodeHTMLEntities(sentence);
         
         span.addEventListener('click', function() {
             const existing = span.nextElementSibling;
@@ -259,7 +436,7 @@
             const translatable = document.createElement('span');
             translatable.className = 'translatable';
             translatable.setAttribute('translate', 'yes');
-            translatable.textContent = decodeHTMLEntities(sentence); // 팝업에도 디코딩 적용
+            translatable.textContent = decodeHTMLEntities(sentence);
             popup.appendChild(translatable);
 
             if (span.nextSibling) {
@@ -274,7 +451,6 @@
         return span;
     }
 
-    // 페이지 표시
     function displayPage(pageIndex) {
         const content = document.querySelector('.text-content');
         content.innerHTML = '';
@@ -286,87 +462,189 @@
         });
 
         document.querySelector('.page-info').textContent = `${pageIndex + 1}/${pages.length}`;
+        document.getElementById('pageSlider').value = pageIndex + 1;
         
         document.getElementById('prevPage').disabled = pageIndex === 0;
         document.getElementById('nextPage').disabled = pageIndex === pages.length - 1;
     }
 
-    // 초기화
-    window.addEventListener('load', function() {
-        const originalText = `{{ content }}`;
-        pages = paginateText(originalText);
-        displayPage(0);
+    // Event Listeners
+    document.addEventListener('DOMContentLoaded', function() {
+        const sidebar = document.querySelector('.sidebar');
+        const controls = document.querySelector('.controls');
+        const settingsPanel = document.querySelector('.settings-panel');
+        const cornerButton = document.querySelector('.corner-button');
+        
+        // Touch handling
+        document.addEventListener('touchstart', e => {
+            touchStartY = e.touches[0].screenY;
+            touchStartX = e.touches[0].screenX;
+        });
 
-        // 이벤트 리스너 추가
-        document.getElementById('prevPage').addEventListener('click', () => {
+        document.addEventListener('touchend', e => {
+            const touchEndY = e.changedTouches[0].screenY;
+            const touchEndX = e.changedTouches[0].screenX;
+            const diffY = touchEndY - touchStartY;
+            const diffX = touchEndX - touchStartX;
+
+            // Only trigger if vertical swipe is more prominent than horizontal
+            if (Math.abs(diffY) > Math.abs(diffX) && Math.abs(diffY) > 50) {
+                if (diffY > 0) {
+                    // Swipe down - show sidebar
+                    sidebar.classList.add('active');
+                    controls.classList.remove('active');
+                } else {
+                    // Swipe up - show controls
+                    controls.classList.add('active');
+                    sidebar.classList.remove('active');
+                }
+            }
+        });
+
+        // Corner button interaction
+        cornerButton.addEventListener('click', () => {
+            sidebar.classList.toggle('active');
+            controls.classList.remove('active');
+        });
+
+        // Close panels when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!sidebar.contains(e.target) && 
+                !cornerButton.contains(e.target) && 
+                !controls.contains(e.target)) {
+                sidebar.classList.remove('active');
+                controls.classList.remove('active');
+            }
+        });
+
+        // Settings panel toggle
+        document.getElementById('readingSettings').addEventListener('click', () => {
+            settingsPanel.classList.toggle('active');
+        });
+
+        // Return to main
+        document.getElementById('returnMain').addEventListener('click', () => {
+            window.location.href = '/';
+        });
+
+        // Font settings
+        const fontFamilySelect = document.getElementById('fontFamily');
+        const fontSizeInput = document.getElementById('fontSize');
+        const lineHeightInput = document.getElementById('lineHeight');
+        const fontSizeValue = document.getElementById('fontSizeValue');
+        const lineHeightValue = document.getElementById('lineHeightValue');
+
+        fontFamilySelect.addEventListener('change', (e) => {
+            document.body.style.fontFamily = e.target.value;
+        });
+
+        fontSizeInput.addEventListener('input', (e) => {
+            const size = e.target.value;
+            document.documentElement.style.setProperty('--text-size', `${size}px`);
+            fontSizeValue.textContent = `${size}px`;
+        });
+
+        lineHeightInput.addEventListener('input', (e) => {
+            const height = e.target.value;
+            document.documentElement.style.setProperty('--line-height', height);
+            lineHeightValue.textContent = height;
+        });
+
+        // Dark mode toggle
+        const darkModeToggle = document.getElementById('darkModeToggle');
+        darkModeToggle.addEventListener('click', () => {
+            isDarkMode = !isDarkMode;
+            document.body.classList.toggle('dark-mode');
+            darkModeToggle.textContent = isDarkMode ? 'Light Mode' : 'Dark Mode';
+        });
+
+        // Page navigation
+        const pageSlider = document.getElementById('pageSlider');
+        const prevButton = document.getElementById('prevPage');
+        const nextButton = document.getElementById('nextPage');
+
+        pageSlider.addEventListener('input', () => {
+            currentPage = parseInt(pageSlider.value) - 1;
+            displayPage(currentPage);
+        });
+
+        prevButton.addEventListener('click', () => {
             if (currentPage > 0) {
                 currentPage--;
                 displayPage(currentPage);
             }
         });
 
-        document.getElementById('nextPage').addEventListener('click', () => {
+        nextButton.addEventListener('click', () => {
             if (currentPage < pages.length - 1) {
                 currentPage++;
                 displayPage(currentPage);
             }
         });
 
-        // 스와이프 이벤트
-        let touchStartX = 0;
-        document.addEventListener('touchstart', e => {
-            touchStartX = e.touches[0].screenX;
-        });
-
-        document.addEventListener('touchend', e => {
-            const touchEndX = e.changedTouches[0].screenX;
-            const diff = touchEndX - touchStartX;
-
-            if (Math.abs(diff) > 50) {
-                if (diff > 0 && currentPage > 0) {
-                    currentPage--;
-                    displayPage(currentPage);
-                } else if (diff < 0 && currentPage < pages.length - 1) {
-                    currentPage++;
-                    displayPage(currentPage);
-                }
+        // Keyboard navigation
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowLeft' && !prevButton.disabled) {
+                prevButton.click();
+            } else if (e.key === 'ArrowRight' && !nextButton.disabled) {
+                nextButton.click();
             }
         });
 
-        // 다크모드 토글
-        const darkModeToggle = document.createElement('button');
-        darkModeToggle.className = 'control-btn';
-        darkModeToggle.textContent = '🌙';
-        darkModeToggle.style.marginLeft = '10px';
-        document.querySelector('.controls-inner').appendChild(darkModeToggle);
+        // Initialize content
+        const originalText = `{{ content }}`;
+        pages = paginateText(originalText);
+        displayPage(0);
 
-        darkModeToggle.addEventListener('click', () => {
-            isDarkMode = !isDarkMode;
-            document.body.classList.toggle('dark-mode');
-            darkModeToggle.textContent = isDarkMode ? '🌞' : '🌙';
-        });
+        // Update page slider
+        pageSlider.max = pages.length;
     });
 
-    // 컨트롤 숨기기/보이기
-    let lastScrollY = window.scrollY;
-    let controlsTimeout;
-    
-    window.addEventListener('scroll', () => {
-        const controls = document.querySelector('.controls');
-        const currentScrollY = window.scrollY;
+    // Save settings to localStorage
+    function saveSettings() {
+        const settings = {
+            fontFamily: document.body.style.fontFamily,
+            fontSize: document.documentElement.style.getPropertyValue('--text-size'),
+            lineHeight: document.documentElement.style.getPropertyValue('--line-height'),
+            isDarkMode: document.body.classList.contains('dark-mode')
+        };
+        localStorage.setItem('readerSettings', JSON.stringify(settings));
+    }
 
-        if (currentScrollY > lastScrollY) {
-            controls.classList.add('hidden');
-        } else {
-            controls.classList.remove('hidden');
+    // Load settings from localStorage
+    function loadSettings() {
+        const savedSettings = localStorage.getItem('readerSettings');
+        if (savedSettings) {
+            const settings = JSON.parse(savedSettings);
+            document.body.style.fontFamily = settings.fontFamily;
+            document.documentElement.style.setProperty('--text-size', settings.fontSize);
+            document.documentElement.style.setProperty('--line-height', settings.lineHeight);
+            if (settings.isDarkMode) {
+                document.body.classList.add('dark-mode');
+                document.getElementById('darkModeToggle').textContent = 'Light Mode';
+            }
+            
+            // Update input values
+            document.getElementById('fontFamily').value = settings.fontFamily;
+            document.getElementById('fontSize').value = parseInt(settings.fontSize);
+            document.getElementById('lineHeight').value = parseFloat(settings.lineHeight);
+            document.getElementById('fontSizeValue').textContent = settings.fontSize;
+            document.getElementById('lineHeightValue').textContent = settings.lineHeight;
         }
+    }
 
-        lastScrollY = currentScrollY;
-
+    // Auto-hide controls after inactivity
+    let controlsTimeout;
+    function resetControlsTimeout() {
         clearTimeout(controlsTimeout);
         controlsTimeout = setTimeout(() => {
-            controls.classList.remove('hidden');
-        }, 1000);
+            document.querySelector('.controls').classList.remove('active');
+        }, 3000);
+    }
+
+    document.addEventListener('mousemove', () => {
+        document.querySelector('.controls').classList.add('active');
+        resetControlsTimeout();
     });
 </script>
 </body>
