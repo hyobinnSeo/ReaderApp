@@ -71,11 +71,19 @@
             padding: 0;
             transition: margin-left 0.3s ease;
             min-height: 100vh;
-            touch-action: pan-y pinch-zoom;
         }
 
         .content.sidebar-open {
             margin-left: 250px;
+        }
+
+        .text-content {
+            padding: 20px;
+            touch-action: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
         }
 
         .sentence {
@@ -271,12 +279,9 @@
             align-items: center;
             margin-bottom: 15px;
         }
-
-        .text-content {
-            padding: 20px;
-        }
     </style>
 </head>
+
 <body class="notranslate">
     <div class="sidebar">
         <div class="sidebar-menu">
@@ -326,7 +331,6 @@
             <button class="settings-button confirm" id="confirmSettings">Confirm</button>
         </div>
     </div>
-
     <script>
         // Initialize variables
         let currentPage = 0;
@@ -383,96 +387,46 @@
             const span = document.createElement('span');
             span.className = 'sentence notranslate';
             span.textContent = decodeHTMLEntities(sentence);
+            
+            span.addEventListener('click', handleSentenceClick);
+            return span;
+        }
 
-            let popup = null;
-            let touchMoved = false;
+        function handleSentenceClick(e) {
+            e.preventDefault();
+            e.stopPropagation();
 
-            span.addEventListener('touchstart', (e) => {
-                touchMoved = false;
-                e.stopPropagation();
-            }, { passive: true });
-
-            span.addEventListener('touchmove', (e) => {
-                touchMoved = true;
-                e.stopPropagation();
-            }, { passive: true });
-
-            span.addEventListener('touchend', (e) => {
-                e.stopPropagation();
-                if (touchMoved) return;
-                handleSentenceClick(e);
-            });
-
-            span.addEventListener('click', (e) => {
-                e.stopPropagation();
-                if ('ontouchstart' in window) return;
-                handleSentenceClick(e);
-            });
-
-            function handleSentenceClick(e) {
-                e.preventDefault();
-                e.stopPropagation();
-
-                const existing = span.nextElementSibling;
-                if (existing?.classList.contains('translation-popup')) {
-                    return;
-                }
-
-                popup = document.createElement('div');
-                popup.className = 'translation-popup';
-                popup.style.display = 'flex';
-                popup.style.alignItems = 'center';
-                popup.style.gap = '8px';
-
-                const translatable = document.createElement('span');
-                translatable.className = 'translatable';
-                translatable.setAttribute('translate', 'yes');
-                translatable.textContent = decodeHTMLEntities(sentence);
-                translatable.style.flex = '1';
-
-                const closeButton = document.createElement('button');
-                closeButton.innerHTML = '✕';
-                closeButton.style.cssText = `
-                    background: none;
-                    border: none;
-                    color: #666;
-                    font-size: 14px;
-                    cursor: pointer;
-                    padding: 4px;
-                    margin-left: 4px;
-                    line-height: 1;
-                    opacity: 0.7;
-                `;
-
-                if (document.body.classList.contains('dark-mode')) {
-                    closeButton.style.color = '#E7E9EF';
-                }
-
-                closeButton.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    popup.remove();
-                    popup = null;
-                });
-
-                popup.appendChild(translatable);
-                popup.appendChild(closeButton);
-
-                popup.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                });
-
-                popup.addEventListener('touchstart', (e) => e.stopPropagation(), { passive: true });
-                popup.addEventListener('touchmove', (e) => e.stopPropagation(), { passive: true });
-                popup.addEventListener('touchend', (e) => e.stopPropagation());
-
-                if (span.nextSibling) {
-                    span.parentNode.insertBefore(popup, span.nextSibling);
-                } else {
-                    span.parentNode.appendChild(popup);
-                }
+            const span = e.target;
+            const existing = span.nextElementSibling;
+            if (existing?.classList.contains('translation-popup')) {
+                existing.remove();
+                return;
             }
 
-            return span;
+            const popup = document.createElement('div');
+            popup.className = 'translation-popup';
+
+            const translatable = document.createElement('span');
+            translatable.className = 'translatable';
+            translatable.setAttribute('translate', 'yes');
+            translatable.textContent = span.textContent;
+
+            const closeButton = document.createElement('button');
+            closeButton.innerHTML = '✕';
+            closeButton.className = 'icon-button';
+            closeButton.addEventListener('click', (e) => {
+                e.stopPropagation();
+                popup.remove();
+            });
+
+            popup.appendChild(translatable);
+            popup.appendChild(closeButton);
+
+            if (span.nextSibling) {
+                span.parentNode.insertBefore(popup, span.nextSibling);
+            } else {
+                span.parentNode.appendChild(popup);
+            }
         }
 
         function displayPage(pageIndex) {
@@ -495,13 +449,9 @@
         }
 
         // Settings functionality
-        const settingsButton = document.getElementById('readingSettings');
         const settingsPopup = document.querySelector('.settings-popup');
-        const closeSettings = document.getElementById('closeSettings');
         const fontSizeSlider = document.getElementById('fontSizeSlider');
         const fontFamilySelect = document.getElementById('fontFamilySelect');
-        const confirmSettings = document.getElementById('confirmSettings');
-        const cancelSettings = document.getElementById('cancelSettings');
         const fontSizeValue = document.getElementById('fontSizeValue');
 
         let originalSettings = {
@@ -514,179 +464,97 @@
             fontFamily: 'sans-serif'
         };
 
-        function closeSettingsPopup() {
-            settingsPopup.style.display = 'none';
-        }
-
-        function revertSettings() {
-            document.querySelector('.content').style.fontSize = originalSettings.fontSize;
-            document.querySelector('.content').style.fontFamily = originalSettings.fontFamily;
-        }
-
-        settingsButton.addEventListener('click', () => {
+        document.getElementById('readingSettings').addEventListener('click', () => {
             originalSettings = {
                 fontSize: document.querySelector('.content').style.fontSize || '16px',
                 fontFamily: document.querySelector('.content').style.fontFamily || 'sans-serif'
             };
-
-            fontSizeSlider.value = parseInt(originalSettings.fontSize);
-            fontSizeValue.textContent = originalSettings.fontSize;
-            fontFamilySelect.value = originalSettings.fontFamily;
-
             settingsPopup.style.display = 'block';
+        });
+
+        document.getElementById('closeSettings').addEventListener('click', () => {
+            settingsPopup.style.display = 'none';
         });
 
         fontSizeSlider.addEventListener('input', (e) => {
             const newSize = `${e.target.value}px`;
             fontSizeValue.textContent = newSize;
-            tempSettings.fontSize = newSize;
             document.querySelector('.content').style.fontSize = newSize;
         });
 
         fontFamilySelect.addEventListener('change', (e) => {
-            tempSettings.fontFamily = e.target.value;
             document.querySelector('.content').style.fontFamily = e.target.value;
         });
 
-        closeSettings.addEventListener('click', () => {
-            revertSettings();
-            closeSettingsPopup();
+        // Touch handling for page navigation
+        const contentElement = document.querySelector('.text-content');
+        let startX = 0;
+        let startY = 0;
+        let startTime = 0;
+        const SWIPE_THRESHOLD = 50;
+        const TIME_THRESHOLD = 300;
+
+        contentElement.addEventListener('touchstart', function(e) {
+            startX = e.changedTouches[0].screenX;
+            startY = e.changedTouches[0].screenY;
+            startTime = new Date().getTime();
+            console.log('Touch start:', startX);
+        }, { passive: false });
+
+        contentElement.addEventListener('touchmove', function(e) {
+            const deltaX = e.changedTouches[0].screenX - startX;
+            const deltaY = Math.abs(e.changedTouches[0].screenY - startY);
+            
+            if (Math.abs(deltaX) > deltaY && Math.abs(deltaX) > 10) {
+                e.preventDefault();
+            }
+        }, { passive: false });
+
+        contentElement.addEventListener('touchend', function(e) {
+            const deltaX = e.changedTouches[0].screenX - startX;
+            const deltaY = Math.abs(e.changedTouches[0].screenY - startY);
+            const elapsedTime = new Date().getTime() - startTime;
+
+            console.log('Touch end:', e.changedTouches[0].screenX, 'Delta:', deltaX);
+
+            if (Math.abs(deltaX) > deltaY && 
+                Math.abs(deltaX) > SWIPE_THRESHOLD && 
+                elapsedTime < TIME_THRESHOLD) {
+                
+                if (deltaX > 0 && currentPage > 0) {
+                    currentPage--;
+                    displayPage(currentPage);
+                } else if (deltaX < 0 && currentPage < pages.length - 1) {
+                    currentPage++;
+                    displayPage(currentPage);
+                }
+            }
+        }, { passive: false });
+
+        // Controller functionality
+        const controller = document.querySelector('.controller');
+        const controllerTrigger = document.querySelector('.controller-trigger');
+
+        controllerTrigger.addEventListener('mouseenter', () => {
+            controller.classList.add('visible');
         });
 
-        cancelSettings.addEventListener('click', () => {
-            revertSettings();
-            closeSettingsPopup();
-        });
-
-        confirmSettings.addEventListener('click', () => {
-            originalSettings = { ...tempSettings };
-            closeSettingsPopup();
+        controller.addEventListener('mouseleave', () => {
+            controller.classList.remove('visible');
         });
 
         // Sidebar functionality
         const sidebar = document.querySelector('.sidebar');
         const content = document.querySelector('.content');
-        const toggleSidebarBtn = document.getElementById('toggleSidebar');
-
-        function closeSidebar() {
-            sidebar.classList.remove('open');
-            content.classList.remove('sidebar-open');
-        }
-
-        toggleSidebarBtn.addEventListener('click', (e) => {
+        
+        document.getElementById('toggleSidebar').addEventListener('click', (e) => {
             e.stopPropagation();
             sidebar.classList.toggle('open');
             content.classList.toggle('sidebar-open');
         });
 
-        document.addEventListener('click', (e) => {
-            if (!sidebar.contains(e.target) &&
-                !toggleSidebarBtn.contains(e.target) &&
-                sidebar.classList.contains('open')) {
-                closeSidebar();
-            }
-
-            if (!settingsPopup.contains(e.target) &&
-                !settingsButton.contains(e.target) &&
-                settingsPopup.style.display === 'block') {
-                revertSettings();
-                closeSettingsPopup();
-            }
-        });
-
-        sidebar.addEventListener('click', (e) => {
-            e.stopPropagation();
-        });
-
-        // Controller functionality
-        const controller = document.querySelector('.controller');
-        const controllerTrigger = document.querySelector('.controller-trigger');
-        let isControllerVisible = false;
-
-        function showController() {
-            controller.classList.add('visible');
-            isControllerVisible = true;
-        }
-
-        function hideController() {
-            controller.classList.remove('visible');
-            isControllerVisible = false;
-        }
-
-        controllerTrigger.addEventListener('mouseenter', showController);
-        controller.addEventListener('mouseenter', showController);
-        controller.addEventListener('mouseleave', hideController);
-
-        // Improved touch handling for page navigation
-        let touchStartX = null;
-        let touchStartY = null;
-        let isSwiping = false;
-
-        document.querySelector('.content').addEventListener('touchstart', e => {
-            touchStartX = e.touches[0].clientX;
-            touchStartY = e.touches[0].clientY;
-            isSwiping = false;
-        }, { passive: true });
-
-        document.querySelector('.content').addEventListener('touchmove', e => {
-            if (touchStartX === null) return;
-            
-            const touchCurrentX = e.touches[0].clientX;
-            const touchCurrentY = e.touches[0].clientY;
-            const deltaX = touchStartX - touchCurrentX;
-            const deltaY = Math.abs(touchStartY - touchCurrentY);
-
-            // Check if horizontal swipe (deltaX) is greater than vertical movement (deltaY)
-            if (Math.abs(deltaX) > deltaY && Math.abs(deltaX) > 30) {
-                isSwiping = true;
-                e.preventDefault(); // Prevent scrolling when swiping
-            }
-        }, { passive: false });
-
-        document.querySelector('.content').addEventListener('touchend', e => {
-            if (!touchStartX || !isSwiping) return;
-
-            const touchEndX = e.changedTouches[0].clientX;
-            const deltaX = touchStartX - touchEndX;
-
-            // Minimum swipe distance threshold
-            if (Math.abs(deltaX) > 50) {
-                if (deltaX > 0 && currentPage < pages.length - 1) {
-                    // Swipe left -> next page
-                    currentPage++;
-                    displayPage(currentPage);
-                } else if (deltaX < 0 && currentPage > 0) {
-                    // Swipe right -> previous page
-                    currentPage--;
-                    displayPage(currentPage);
-                }
-            }
-
-            // Reset touch tracking
-            touchStartX = null;
-            touchStartY = null;
-            isSwiping = false;
-        });
-
-        // Vertical swipe for controller
-        document.addEventListener('touchstart', e => {
-            touchStartY = e.touches[0].screenY;
-        }, { passive: true });
-
-        document.addEventListener('touchend', e => {
-            const touchEndY = e.changedTouches[0].screenY;
-            const diff = touchEndY - touchStartY;
-
-            if (diff < -50) {
-                showController();
-            } else if (diff > 50) {
-                hideController();
-            }
-        });
-
         // Dark mode toggle
-        const darkModeToggle = document.getElementById('darkModeToggle');
-        darkModeToggle.addEventListener('click', () => {
+        document.getElementById('darkModeToggle').addEventListener('click', () => {
             document.body.classList.toggle('dark-mode');
             isDarkMode = !isDarkMode;
         });
@@ -697,35 +565,12 @@
         });
 
         // Page slider functionality
-        const pageSlider = document.querySelector('.page-slider input');
-        pageSlider.addEventListener('input', (e) => {
+        document.querySelector('.page-slider input').addEventListener('input', (e) => {
             const pageIndex = Math.floor((e.target.value - 1) * (pages.length - 1) / 99);
             if (pageIndex !== currentPage) {
                 currentPage = pageIndex;
                 displayPage(currentPage);
             }
-        });
-
-        // Keyboard navigation
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'ArrowLeft' && currentPage > 0) {
-                currentPage--;
-                displayPage(currentPage);
-            } else if (e.key === 'ArrowRight' && currentPage < pages.length - 1) {
-                currentPage++;
-                displayPage(currentPage);
-            }
-        });
-
-        // Window resize handling
-        let resizeTimeout;
-        window.addEventListener('resize', () => {
-            clearTimeout(resizeTimeout);
-            resizeTimeout = setTimeout(() => {
-                const originalText = `{{ content }}`;
-                pages = paginateText(originalText);
-                displayPage(currentPage);
-            }, 250);
         });
 
         // Initialize the page
@@ -741,13 +586,6 @@
                 document.body.classList.add('dark-mode');
                 isDarkMode = true;
             }
-
-            window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
-                if (!document.body.classList.contains('dark-mode') === e.matches) {
-                    document.body.classList.toggle('dark-mode');
-                    isDarkMode = e.matches;
-                }
-            });
 
             const slider = document.querySelector('.page-slider input');
             slider.max = Math.max(100, pages.length);
