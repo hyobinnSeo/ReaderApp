@@ -222,6 +222,32 @@ def update_category(file_id):
         conn.commit()
     return redirect(url_for('list_files'))
 
+@app.route('/delete/<int:file_id>', methods=['DELETE'])
+def delete_file(file_id):
+    with sqlite3.connect(DATABASE) as conn:
+        c = conn.cursor()
+        # Get the filename first
+        c.execute('SELECT filename FROM files WHERE id = ?', (file_id,))
+        result = c.fetchone()
+        
+        if result is None:
+            return jsonify({'success': False, 'error': 'File not found in database'}), 404
+            
+        filename = result[0]
+        file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        
+        # Remove from database
+        c.execute('DELETE FROM files WHERE id = ?', (file_id,))
+        conn.commit()
+        
+        # Try to delete the physical file if it exists
+        try:
+            if os.path.exists(file_path):
+                os.remove(file_path)
+            return jsonify({'success': True, 'message': 'File deleted successfully'})
+        except Exception as e:
+            return jsonify({'success': False, 'error': str(e)}), 500
+
 if __name__ == '__main__':
     init_db()
     app.run(debug=True)
