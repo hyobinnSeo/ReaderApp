@@ -6,279 +6,316 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="google" content="notranslate">
     <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
 
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            line-height: 1.8;
-            background-color: #ffffff;
-            color: #333333;
-            overflow-x: hidden;
-        }
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    line-height: 1.8;
+    background-color: #ffffff;
+    color: #333333;
+    overflow-x: hidden;
+    overflow-y: hidden;
+}
 
-        body.dark-mode {
-            background-color: #1C2331;
-            color: #E7E9EF;
-        }
+body.dark-mode {
+    background-color: #1C2331;
+    color: #E7E9EF;
+}
 
-        .sidebar {
-            position: fixed;
-            left: -250px;
-            top: 0;
-            width: 250px;
-            height: 100%;
-            background-color: #ffffff;
-            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
-            transition: left 0.3s ease;
-            z-index: 1001;
-        }
+.sidebar {
+    position: fixed;
+    left: -250px;
+    top: 0;
+    width: 250px;
+    height: 100%;
+    background-color: #ffffff;
+    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+    transition: left 0.3s ease;
+    z-index: 1001;
+}
 
-        .dark-mode .sidebar {
-            background-color: #232C3E;
-            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.3);
-        }
+.dark-mode .sidebar {
+    background-color: #232C3E;
+    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.3);
+}
 
-        .sidebar.open {
-            left: 0;
-        }
+.sidebar.open {
+    left: 0;
+}
 
-        .sidebar-menu {
-            padding: 20px;
-        }
+.sidebar-menu {
+    padding: 20px;
+}
 
-        .sidebar-item {
-            padding: 12px;
-            cursor: pointer;
-            border-radius: 6px;
-            margin-bottom: 8px;
-            transition: background-color 0.2s ease;
-        }
+.sidebar-item {
+    padding: 12px;
+    cursor: pointer;
+    border-radius: 6px;
+    margin-bottom: 8px;
+    transition: background-color 0.2s ease;
+}
 
-        .sidebar-item:hover {
-            background-color: #f0f0f0;
-        }
+.sidebar-item:hover {
+    background-color: #f0f0f0;
+}
 
-        .dark-mode .sidebar-item:hover {
-            background-color: #2A354B;
-        }
+.dark-mode .sidebar-item:hover {
+    background-color: #2A354B;
+}
 
-        .content {
-            margin: 0;
-            padding: 0;
-            transition: margin-left 0.3s ease;
-            min-height: 100vh;
-        }
+.content {
+    margin: 0;
+    padding: 0;
+    transition: margin-left 0.3s ease;
+    height: 100vh;
+    overflow: hidden;
+}
 
-        .content.sidebar-open {
-            margin-left: 250px;
-        }
+.content.sidebar-open {
+    margin-left: 250px;
+}
 
-        .text-content {
-            padding: 20px;
-            touch-action: none;
-            -webkit-user-select: none;
-            -moz-user-select: none;
-            -ms-user-select: none;
-            user-select: none;
-        }
+.text-content {
+    padding: 20px;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    overflow-y: auto;
+    height: calc(100vh - 80px);
+    -webkit-overflow-scrolling: touch;
+}
 
-        .sentence {
-            cursor: pointer;
-            border-radius: 4px;
-            padding: 0 4px;
-            transition: background-color 0.2s ease;
-        }
+.sentence {
+    cursor: pointer;
+    border-radius: 4px;
+    padding: 0 4px;
+    transition: background-color 0.2s ease;
+}
 
-        .sentence:hover {
-            background-color: rgba(0, 0, 0, 0.05);
-        }
+.sentence:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+}
 
-        .dark-mode .sentence:hover {
-            background-color: #2A354B;
-        }
+.dark-mode .sentence:hover {
+    background-color: #2A354B;
+}
 
-        .translation-popup {
-            display: block;
-            margin: 8px 0;
-            padding: 8px;
-            border-radius: 6px;
-            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-            border: 1px solid #e2e8f0;
-            background-color: #f8f9fa;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
+.translation-popup {
+    display: block;
+    margin: 8px 0;
+    padding: 8px;
+    border-radius: 6px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    border: 1px solid #e2e8f0;
+    background-color: #f8f9fa;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
 
-        .translation-popup:hover {
-            background-color: #e9ecef;
-        }
+.translation-popup:hover {
+    background-color: #e9ecef;
+}
 
-        .dark-mode .translation-popup {
-            background-color: #232C3E;
-            border-color: #2A354B;
-        }
+.dark-mode .translation-popup {
+    background-color: #232C3E;
+    border-color: #2A354B;
+}
 
-        .dark-mode .translation-popup:hover {
-            background-color: #2A354B;
-        }
+.dark-mode .translation-popup:hover {
+    background-color: #2A354B;
+}
 
-        .translatable {
-            -webkit-user-select: text;
-            -moz-user-select: text;
-            -ms-user-select: text;
-            user-select: text;
-            font-size: 0.95em;
-            color: #4a5568;
-        }
+.translatable {
+    -webkit-user-select: text;
+    -moz-user-select: text;
+    -ms-user-select: text;
+    user-select: text;
+    font-size: 0.95em;
+    color: #4a5568;
+}
 
-        .dark-mode .translatable {
-            color: #C2C9D6;
-        }
+.dark-mode .translatable {
+    color: #C2C9D6;
+}
 
-        .controller {
-            position: fixed;
-            bottom: -150px;
-            left: 0;
-            right: 0;
-            background-color: rgba(255, 255, 255, 0.95);
-            padding: 20px;
-            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
-            transition: bottom 0.3s ease;
-            z-index: 1000;
-        }
+.controller {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background-color: rgba(255, 255, 255, 0.95);
+    padding: 20px;
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+    transform: translateY(100%);
+    transition: transform 0.3s ease;
+    z-index: 1000;
+    border-top-left-radius: 15px;
+    border-top-right-radius: 15px;
+}
 
-        .dark-mode .controller {
-            background-color: rgba(35, 44, 62, 0.95);
-            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.3);
-        }
+.dark-mode .controller {
+    background-color: rgba(35, 44, 62, 0.95);
+}
 
-        .controller.visible {
-            bottom: 0;
-        }
+.controller.visible {
+    transform: translateY(0);
+}
 
-        .controller-trigger {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            height: 20px;
-            z-index: 999;
-        }
+.controller-handle {
+    position: absolute;
+    top: -20px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 40px;
+    height: 20px;
+    background-color: rgba(255, 255, 255, 0.95);
+    border-top-left-radius: 10px;
+    border-top-right-radius: 10px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.1);
+}
 
-        .page-slider {
-            width: 100%;
-            margin: 20px 0;
-        }
+.dark-mode .controller-handle {
+    background-color: rgba(35, 44, 62, 0.95);
+}
 
-        .page-slider input[type="range"] {
-            width: 100%;
-            height: 4px;
-            background: #ddd;
-            border-radius: 2px;
-            outline: none;
-            transition: background 0.2s ease;
-        }
+.controller-handle::after {
+    content: '';
+    width: 30px;
+    height: 4px;
+    background-color: #ccc;
+    border-radius: 2px;
+}
 
-        .dark-mode .page-slider input[type="range"] {
-            background: #2A354B;
-        }
+.dark-mode .controller-handle::after {
+    background-color: #444;
+}
 
-        .settings-popup {
-            display: none;
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-            z-index: 1002;
-            min-width: 300px;
-        }
+.page-slider {
+    width: 100%;
+    margin: 20px 0;
+}
 
-        .dark-mode .settings-popup {
-            background: #232C3E;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
-        }
+.page-slider input[type="range"] {
+    width: 100%;
+    height: 4px;
+    background: #ddd;
+    border-radius: 2px;
+    outline: none;
+    transition: background 0.2s ease;
+}
 
-        .settings-option {
-            margin: 15px 0;
-        }
+.dark-mode .page-slider input[type="range"] {
+    background: #2A354B;
+}
 
-        .settings-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-        }
+.settings-popup {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    z-index: 1002;
+    min-width: 300px;
+}
 
-        .settings-title {
-            font-size: 1.2em;
-            font-weight: bold;
-        }
+.dark-mode .settings-popup {
+    background: #232C3E;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+}
 
-        .settings-buttons {
-            display: flex;
-            justify-content: flex-end;
-            margin-top: 20px;
-            gap: 10px;
-        }
+.settings-option {
+    margin: 15px 0;
+}
 
-        .settings-button {
-            padding: 8px 16px;
-            border-radius: 4px;
-            cursor: pointer;
-            border: none;
-            transition: all 0.2s ease;
-        }
+.settings-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
 
-        .settings-button.confirm {
-            background-color: #4CAF50;
-            color: white;
-        }
+.settings-title {
+    font-size: 1.2em;
+    font-weight: bold;
+}
 
-        .settings-button.cancel {
-            background-color: #f0f0f0;
-            color: #333;
-        }
+.settings-buttons {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 20px;
+    gap: 10px;
+}
 
-        .dark-mode .settings-button.confirm {
-            background-color: #45a049;
-        }
+.settings-button {
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s ease;
+}
 
-        .dark-mode .settings-button.cancel {
-            background-color: #2A354B;
-            color: #E7E9EF;
-        }
+.settings-button.confirm {
+    background-color: #4CAF50;
+    color: white;
+}
 
-        .settings-button:hover {
-            opacity: 0.9;
-        }
+.settings-button.cancel {
+    background-color: #f0f0f0;
+    color: #333;
+}
 
-        .icon-button {
-            background: none;
-            border: none;
-            cursor: pointer;
-            padding: 8px;
-            font-size: 20px;
-            color: #333;
-        }
+.dark-mode .settings-button.confirm {
+    background-color: #45a049;
+}
 
-        .dark-mode .icon-button {
-            color: #E7E9EF;
-        }
+.dark-mode .settings-button.cancel {
+    background-color: #2A354B;
+    color: #E7E9EF;
+}
 
-        .controller-icons {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-        }
+.settings-button:hover {
+    opacity: 0.9;
+}
+
+.icon-button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 8px;
+    font-size: 20px;
+    color: #333;
+}
+
+.dark-mode .icon-button {
+    color: #E7E9EF;
+}
+
+.controller-icons {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+@media (max-width: 768px) {
+    .text-content {
+        -webkit-overflow-scrolling: touch;
+        overflow-y: scroll;
+    }
+}
     </style>
 </head>
 
@@ -307,8 +344,6 @@
         </div>
     </div>
 
-    <div class="controller-trigger"></div>
-
     <div class="settings-popup">
         <div class="settings-header">
             <span class="settings-title">Reading Settings</span>
@@ -331,6 +366,7 @@
             <button class="settings-button confirm" id="confirmSettings">Confirm</button>
         </div>
     </div>
+
     <script>
         // Initialize variables
         let currentPage = 0;
@@ -498,7 +534,6 @@
             startX = e.changedTouches[0].screenX;
             startY = e.changedTouches[0].screenY;
             startTime = new Date().getTime();
-            console.log('Touch start:', startX);
         }, { passive: false });
 
         contentElement.addEventListener('touchmove', function(e) {
@@ -514,8 +549,6 @@
             const deltaX = e.changedTouches[0].screenX - startX;
             const deltaY = Math.abs(e.changedTouches[0].screenY - startY);
             const elapsedTime = new Date().getTime() - startTime;
-
-            console.log('Touch end:', e.changedTouches[0].screenX, 'Delta:', deltaX);
 
             if (Math.abs(deltaX) > deltaY && 
                 Math.abs(deltaX) > SWIPE_THRESHOLD && 
@@ -533,14 +566,56 @@
 
         // Controller functionality
         const controller = document.querySelector('.controller');
-        const controllerTrigger = document.querySelector('.controller-trigger');
-
-        controllerTrigger.addEventListener('mouseenter', () => {
-            controller.classList.add('visible');
+        
+        // Double tap functionality
+        let lastTap = 0;
+        document.addEventListener('touchend', function(e) {
+            const currentTime = new Date().getTime();
+            const tapLength = currentTime - lastTap;
+            
+            if (tapLength < 500 && tapLength > 0) {
+                // Double tap detected
+                controller.classList.toggle('visible');
+                e.preventDefault();
+            }
+            lastTap = currentTime;
         });
 
-        controller.addEventListener('mouseleave', () => {
-            controller.classList.remove('visible');
+        // Add controller handle
+        const handle = document.createElement('div');
+        handle.className = 'controller-handle';
+        controller.appendChild(handle);
+
+        // Handle touch events
+        let handleStartY = 0;
+        let handleCurrentY = 0;
+        let initialTransform = 0;
+
+        handle.addEventListener('touchstart', function(e) {
+            handleStartY = e.touches[0].clientY;
+            initialTransform = controller.getBoundingClientRect().top;
+            e.preventDefault();
+        });
+
+        handle.addEventListener('touchmove', function(e) {
+            handleCurrentY = e.touches[0].clientY;
+            const deltaY = handleCurrentY - handleStartY;
+            
+            if (deltaY > 0) { // Dragging down
+                controller.style.transform = `translateY(${deltaY}px)`;
+            }
+            e.preventDefault();
+        });
+
+        handle.addEventListener('touchend', function(e) {
+            const deltaY = handleCurrentY - handleStartY;
+            
+            if (deltaY > 50) { // Hide controller if dragged down enough
+                controller.classList.remove('visible');
+            }
+            
+            controller.style.transform = '';
+            e.preventDefault();
         });
 
         // Sidebar functionality
