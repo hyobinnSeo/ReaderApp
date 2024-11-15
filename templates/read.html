@@ -26,6 +26,17 @@ body.dark-mode {
     color: #E7E9EF;
 }
 
+.overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.3);
+    z-index: 1000;
+}
+
 .sidebar {
     position: fixed;
     left: -250px;
@@ -70,13 +81,8 @@ body.dark-mode {
 .content {
     margin: 0;
     padding: 0;
-    transition: margin-left 0.3s ease;
     height: 100vh;
     overflow: hidden;
-}
-
-.content.sidebar-open {
-    margin-left: 250px;
 }
 
 .text-content {
@@ -310,6 +316,10 @@ body.dark-mode {
     margin-bottom: 15px;
 }
 
+#closeSettings {
+    display: none;
+}
+
 @media (max-width: 768px) {
     .text-content {
         -webkit-overflow-scrolling: touch;
@@ -318,8 +328,9 @@ body.dark-mode {
 }
     </style>
 </head>
-
 <body class="notranslate">
+    <div class="overlay" id="overlay"></div>
+
     <div class="sidebar">
         <div class="sidebar-menu">
             <div class="sidebar-item" id="returnToMain">Return to Main</div>
@@ -489,6 +500,9 @@ body.dark-mode {
         const fontSizeSlider = document.getElementById('fontSizeSlider');
         const fontFamilySelect = document.getElementById('fontFamilySelect');
         const fontSizeValue = document.getElementById('fontSizeValue');
+        const sidebar = document.querySelector('.sidebar');
+        const content = document.querySelector('.content');
+        const overlay = document.getElementById('overlay');
 
         let originalSettings = {
             fontSize: '16px',
@@ -500,18 +514,58 @@ body.dark-mode {
             fontFamily: 'sans-serif'
         };
 
+        // Sidebar functionality
+        document.getElementById('toggleSidebar').addEventListener('click', (e) => {
+            e.stopPropagation();
+            sidebar.classList.toggle('open');
+            overlay.style.display = sidebar.classList.contains('open') ? 'block' : 'none';
+        });
+
+        // Overlay click handler
+        overlay.addEventListener('click', () => {
+            sidebar.classList.remove('open');
+            content.classList.remove('sidebar-open');
+            overlay.style.display = 'none';
+            settingsPopup.style.display = 'none';
+        });
+
+        // Settings handlers
         document.getElementById('readingSettings').addEventListener('click', () => {
             originalSettings = {
                 fontSize: document.querySelector('.content').style.fontSize || '16px',
                 fontFamily: document.querySelector('.content').style.fontFamily || 'sans-serif'
             };
             settingsPopup.style.display = 'block';
+            overlay.style.display = 'block';
+            sidebar.classList.remove('open');
         });
 
-        document.getElementById('closeSettings').addEventListener('click', () => {
+        document.getElementById('cancelSettings').addEventListener('click', () => {
+            // Revert to original settings
+            document.querySelector('.content').style.fontSize = originalSettings.fontSize;
+            document.querySelector('.content').style.fontFamily = originalSettings.fontFamily;
+            fontSizeSlider.value = parseInt(originalSettings.fontSize);
+            fontSizeValue.textContent = originalSettings.fontSize;
+            fontFamilySelect.value = originalSettings.fontFamily;
+            
+            // Close popup
             settingsPopup.style.display = 'none';
+            overlay.style.display = 'none';
         });
 
+        document.getElementById('confirmSettings').addEventListener('click', () => {
+            // Save current settings as original
+            originalSettings = {
+                fontSize: document.querySelector('.content').style.fontSize,
+                fontFamily: document.querySelector('.content').style.fontFamily
+            };
+            
+            // Close popup
+            settingsPopup.style.display = 'none';
+            overlay.style.display = 'none';
+        });
+
+        // Settings controls
         fontSizeSlider.addEventListener('input', (e) => {
             const newSize = `${e.target.value}px`;
             fontSizeValue.textContent = newSize;
@@ -520,6 +574,20 @@ body.dark-mode {
 
         fontFamilySelect.addEventListener('change', (e) => {
             document.querySelector('.content').style.fontFamily = e.target.value;
+        });
+
+        // Dark mode toggle
+        document.getElementById('darkModeToggle').addEventListener('click', () => {
+            document.body.classList.toggle('dark-mode');
+            isDarkMode = !isDarkMode;
+            sidebar.classList.remove('open');
+            content.classList.remove('sidebar-open');
+            overlay.style.display = 'none';
+        });
+
+        // Return to main
+        document.getElementById('returnToMain').addEventListener('click', () => {
+            window.location.href = '/';
         });
 
         // Touch handling for page navigation
@@ -574,19 +642,17 @@ body.dark-mode {
             const tapLength = currentTime - lastTap;
             
             if (tapLength < 500 && tapLength > 0) {
-                // Double tap detected
                 controller.classList.toggle('visible');
                 e.preventDefault();
             }
             lastTap = currentTime;
         });
 
-        // Add controller handle
+        // Controller handle functionality
         const handle = document.createElement('div');
         handle.className = 'controller-handle';
         controller.appendChild(handle);
 
-        // Handle touch events
         let handleStartY = 0;
         let handleCurrentY = 0;
         let initialTransform = 0;
@@ -601,7 +667,7 @@ body.dark-mode {
             handleCurrentY = e.touches[0].clientY;
             const deltaY = handleCurrentY - handleStartY;
             
-            if (deltaY > 0) { // Dragging down
+            if (deltaY > 0) {
                 controller.style.transform = `translateY(${deltaY}px)`;
             }
             e.preventDefault();
@@ -610,33 +676,12 @@ body.dark-mode {
         handle.addEventListener('touchend', function(e) {
             const deltaY = handleCurrentY - handleStartY;
             
-            if (deltaY > 50) { // Hide controller if dragged down enough
+            if (deltaY > 50) {
                 controller.classList.remove('visible');
             }
             
             controller.style.transform = '';
             e.preventDefault();
-        });
-
-        // Sidebar functionality
-        const sidebar = document.querySelector('.sidebar');
-        const content = document.querySelector('.content');
-        
-        document.getElementById('toggleSidebar').addEventListener('click', (e) => {
-            e.stopPropagation();
-            sidebar.classList.toggle('open');
-            content.classList.toggle('sidebar-open');
-        });
-
-        // Dark mode toggle
-        document.getElementById('darkModeToggle').addEventListener('click', () => {
-            document.body.classList.toggle('dark-mode');
-            isDarkMode = !isDarkMode;
-        });
-
-        // Return to main
-        document.getElementById('returnToMain').addEventListener('click', () => {
-            window.location.href = '/';
         });
 
         // Page slider functionality
