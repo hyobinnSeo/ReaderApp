@@ -400,37 +400,21 @@
 
             let popup = null;
             let touchMoved = false;
-            let touchStartY = 0;
-            let isScrolling = false;
-            let scrollTimeout;
 
             // Prevent text selection on touch devices
             span.addEventListener('touchstart', (e) => {
                 touchMoved = false;
-                touchStartY = e.touches[0].clientY;
-                isScrolling = false;
-                clearTimeout(scrollTimeout);
                 e.stopPropagation();
             }, { passive: true });
 
             span.addEventListener('touchmove', (e) => {
-                const touchDeltaY = Math.abs(e.touches[0].clientY - touchStartY);
-                if (touchDeltaY > 10) {  // threshold for detecting scroll
-                    touchMoved = true;
-                    isScrolling = true;
-                }
+                touchMoved = true;
                 e.stopPropagation();
             }, { passive: true });
 
             span.addEventListener('touchend', (e) => {
                 e.stopPropagation();
-
-                // Clear scroll state after a short delay
-                scrollTimeout = setTimeout(() => {
-                    isScrolling = false;
-                }, 100);
-
-                if (touchMoved || isScrolling) return;
+                if (touchMoved) return;
                 handleSentenceClick(e);
             });
 
@@ -453,68 +437,54 @@
                 // Create new popup
                 popup = document.createElement('div');
                 popup.className = 'translation-popup';
+                popup.style.display = 'flex';
+                popup.style.alignItems = 'center';
+                popup.style.gap = '8px';
 
+                // Create translatable content
                 const translatable = document.createElement('span');
                 translatable.className = 'translatable';
                 translatable.setAttribute('translate', 'yes');
                 translatable.textContent = decodeHTMLEntities(sentence);
+                translatable.style.flex = '1';
+
+                // Create close button
+                const closeButton = document.createElement('button');
+                closeButton.innerHTML = '✕';
+                closeButton.style.cssText = `
+            background: none;
+            border: none;
+            color: #666;
+            font-size: 14px;
+            cursor: pointer;
+            padding: 4px;
+            margin-left: 4px;
+            line-height: 1;
+            opacity: 0.7;
+        `;
+
+                // Add dark mode styles
+                if (document.body.classList.contains('dark-mode')) {
+                    closeButton.style.color = '#E7E9EF';
+                }
+
+                closeButton.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    popup.remove();
+                    popup = null;
+                });
 
                 popup.appendChild(translatable);
+                popup.appendChild(closeButton);
 
-                let popupTouchStartY = 0;
-                let popupTouchMoved = false;
-
-                // Add click handler to the popup
+                // Prevent event propagation but don't auto-close
                 popup.addEventListener('click', (e) => {
                     e.stopPropagation();
-                    if (!isScrolling) {
-                        popup.remove();
-                        popup = null;
-                    }
                 });
 
-                // Handle touch events on the popup
-                popup.addEventListener('touchstart', (e) => {
-                    popupTouchStartY = e.touches[0].clientY;
-                    popupTouchMoved = false;
-                    isScrolling = false;
-                    e.stopPropagation();
-                }, { passive: true });
-
-                popup.addEventListener('touchmove', (e) => {
-                    const touchDeltaY = Math.abs(e.touches[0].clientY - popupTouchStartY);
-                    if (touchDeltaY > 10) {
-                        popupTouchMoved = true;
-                        isScrolling = true;
-                    }
-                    e.stopPropagation();
-                }, { passive: true });
-
-                popup.addEventListener('touchend', (e) => {
-                    e.stopPropagation();
-                    if (!popupTouchMoved && !isScrolling) {
-                        popup.remove();
-                        popup = null;
-                    }
-                });
-
-                // Add scroll event listener to prevent accidental closing
-                const handleScroll = (e) => {
-                    isScrolling = true;
-                    clearTimeout(scrollTimeout);
-                    scrollTimeout = setTimeout(() => {
-                        isScrolling = false;
-                    }, 100);
-                };
-
-                window.addEventListener('scroll', handleScroll, { passive: true });
-
-                // Clean up scroll listener when popup is removed
-                const cleanupScrollListener = () => {
-                    window.removeEventListener('scroll', handleScroll);
-                };
-
-                popup.addEventListener('remove', cleanupScrollListener);
+                popup.addEventListener('touchstart', (e) => e.stopPropagation(), { passive: true });
+                popup.addEventListener('touchmove', (e) => e.stopPropagation(), { passive: true });
+                popup.addEventListener('touchend', (e) => e.stopPropagation());
 
                 if (span.nextSibling) {
                     span.parentNode.insertBefore(popup, span.nextSibling);
