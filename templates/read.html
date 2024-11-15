@@ -400,21 +400,37 @@
 
             let popup = null;
             let touchMoved = false;
+            let touchStartY = 0;
+            let isScrolling = false;
+            let scrollTimeout;
 
             // Prevent text selection on touch devices
             span.addEventListener('touchstart', (e) => {
                 touchMoved = false;
+                touchStartY = e.touches[0].clientY;
+                isScrolling = false;
+                clearTimeout(scrollTimeout);
                 e.stopPropagation();
             }, { passive: true });
 
             span.addEventListener('touchmove', (e) => {
-                touchMoved = true;
+                const touchDeltaY = Math.abs(e.touches[0].clientY - touchStartY);
+                if (touchDeltaY > 10) {  // threshold for detecting scroll
+                    touchMoved = true;
+                    isScrolling = true;
+                }
                 e.stopPropagation();
             }, { passive: true });
 
             span.addEventListener('touchend', (e) => {
                 e.stopPropagation();
-                if (touchMoved) return;
+
+                // Clear scroll state after a short delay
+                scrollTimeout = setTimeout(() => {
+                    isScrolling = false;
+                }, 100);
+
+                if (touchMoved || isScrolling) return;
                 handleSentenceClick(e);
             });
 
@@ -445,23 +461,60 @@
 
                 popup.appendChild(translatable);
 
-                // Add click handler to the popup to close it
+                let popupTouchStartY = 0;
+                let popupTouchMoved = false;
+
+                // Add click handler to the popup
                 popup.addEventListener('click', (e) => {
                     e.stopPropagation();
-                    // Close popup regardless of where it was clicked inside
-                    popup.remove();
-                    popup = null;
+                    if (!isScrolling) {
+                        popup.remove();
+                        popup = null;
+                    }
                 });
 
-                // Prevent all event propagation for touch events
-                popup.addEventListener('touchstart', (e) => e.stopPropagation(), { passive: true });
-                popup.addEventListener('touchmove', (e) => e.stopPropagation(), { passive: true });
+                // Handle touch events on the popup
+                popup.addEventListener('touchstart', (e) => {
+                    popupTouchStartY = e.touches[0].clientY;
+                    popupTouchMoved = false;
+                    isScrolling = false;
+                    e.stopPropagation();
+                }, { passive: true });
+
+                popup.addEventListener('touchmove', (e) => {
+                    const touchDeltaY = Math.abs(e.touches[0].clientY - popupTouchStartY);
+                    if (touchDeltaY > 10) {
+                        popupTouchMoved = true;
+                        isScrolling = true;
+                    }
+                    e.stopPropagation();
+                }, { passive: true });
+
                 popup.addEventListener('touchend', (e) => {
                     e.stopPropagation();
-                    // Close popup on touch end
-                    popup.remove();
-                    popup = null;
+                    if (!popupTouchMoved && !isScrolling) {
+                        popup.remove();
+                        popup = null;
+                    }
                 });
+
+                // Add scroll event listener to prevent accidental closing
+                const handleScroll = (e) => {
+                    isScrolling = true;
+                    clearTimeout(scrollTimeout);
+                    scrollTimeout = setTimeout(() => {
+                        isScrolling = false;
+                    }, 100);
+                };
+
+                window.addEventListener('scroll', handleScroll, { passive: true });
+
+                // Clean up scroll listener when popup is removed
+                const cleanupScrollListener = () => {
+                    window.removeEventListener('scroll', handleScroll);
+                };
+
+                popup.addEventListener('remove', cleanupScrollListener);
 
                 if (span.nextSibling) {
                     span.parentNode.insertBefore(popup, span.nextSibling);
