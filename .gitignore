@@ -2,3 +2,5 @@ library.db
 *.db
 __pycache__/
 *.pyc
+uploads/
+uploads/
