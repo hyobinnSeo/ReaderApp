@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html translate="no">
-
 <head>
     <title>{{ filename }} - 읽기</title>
     <meta charset="utf-8">
@@ -26,7 +25,6 @@
             color: #E7E9EF;
         }
 
-        /* Sidebar styles */
         .sidebar {
             position: fixed;
             left: -250px;
@@ -68,19 +66,18 @@
             background-color: #2A354B;
         }
 
-        /* Content area */
         .content {
             margin: 0;
             padding: 0;
             transition: margin-left 0.3s ease;
             min-height: 100vh;
+            touch-action: pan-y pinch-zoom;
         }
 
         .content.sidebar-open {
             margin-left: 250px;
         }
 
-        /* Text content styles */
         .sentence {
             cursor: pointer;
             border-radius: 4px;
@@ -134,7 +131,6 @@
             color: #C2C9D6;
         }
 
-        /* Controller styles */
         .controller {
             position: fixed;
             bottom: -150px;
@@ -165,7 +161,6 @@
             z-index: 999;
         }
 
-        /* Slider styles */
         .page-slider {
             width: 100%;
             margin: 20px 0;
@@ -184,7 +179,6 @@
             background: #2A354B;
         }
 
-        /* Settings popup styles */
         .settings-popup {
             display: none;
             position: fixed;
@@ -258,7 +252,6 @@
             opacity: 0.9;
         }
 
-        /* Icon styles */
         .icon-button {
             background: none;
             border: none;
@@ -272,7 +265,6 @@
             color: #E7E9EF;
         }
 
-        /* Controller icons container */
         .controller-icons {
             display: flex;
             justify-content: space-between;
@@ -285,9 +277,7 @@
         }
     </style>
 </head>
-
 <body class="notranslate">
-    <!-- Sidebar -->
     <div class="sidebar">
         <div class="sidebar-menu">
             <div class="sidebar-item" id="returnToMain">Return to Main</div>
@@ -296,14 +286,12 @@
         </div>
     </div>
 
-    <!-- Main content -->
     <div class="content">
         <div class="text-content">
             <!-- Text content will be inserted here dynamically -->
         </div>
     </div>
 
-    <!-- Controller -->
     <div class="controller">
         <div class="controller-icons">
             <button class="icon-button" id="toggleSidebar">☰</button>
@@ -314,10 +302,8 @@
         </div>
     </div>
 
-    <!-- Controller trigger area -->
     <div class="controller-trigger"></div>
 
-    <!-- Settings popup -->
     <div class="settings-popup">
         <div class="settings-header">
             <span class="settings-title">Reading Settings</span>
@@ -401,7 +387,6 @@
             let popup = null;
             let touchMoved = false;
 
-            // Prevent text selection on touch devices
             span.addEventListener('touchstart', (e) => {
                 touchMoved = false;
                 e.stopPropagation();
@@ -428,42 +413,37 @@
                 e.preventDefault();
                 e.stopPropagation();
 
-                // Check for existing popup
                 const existing = span.nextElementSibling;
                 if (existing?.classList.contains('translation-popup')) {
                     return;
                 }
 
-                // Create new popup
                 popup = document.createElement('div');
                 popup.className = 'translation-popup';
                 popup.style.display = 'flex';
                 popup.style.alignItems = 'center';
                 popup.style.gap = '8px';
 
-                // Create translatable content
                 const translatable = document.createElement('span');
                 translatable.className = 'translatable';
                 translatable.setAttribute('translate', 'yes');
                 translatable.textContent = decodeHTMLEntities(sentence);
                 translatable.style.flex = '1';
 
-                // Create close button
                 const closeButton = document.createElement('button');
                 closeButton.innerHTML = '✕';
                 closeButton.style.cssText = `
-            background: none;
-            border: none;
-            color: #666;
-            font-size: 14px;
-            cursor: pointer;
-            padding: 4px;
-            margin-left: 4px;
-            line-height: 1;
-            opacity: 0.7;
-        `;
+                    background: none;
+                    border: none;
+                    color: #666;
+                    font-size: 14px;
+                    cursor: pointer;
+                    padding: 4px;
+                    margin-left: 4px;
+                    line-height: 1;
+                    opacity: 0.7;
+                `;
 
-                // Add dark mode styles
                 if (document.body.classList.contains('dark-mode')) {
                     closeButton.style.color = '#E7E9EF';
                 }
@@ -477,7 +457,6 @@
                 popup.appendChild(translatable);
                 popup.appendChild(closeButton);
 
-                // Prevent event propagation but don't auto-close
                 popup.addEventListener('click', (e) => {
                     e.stopPropagation();
                 });
@@ -638,7 +617,58 @@
         controller.addEventListener('mouseenter', showController);
         controller.addEventListener('mouseleave', hideController);
 
-        let touchStartY = 0;
+        // Improved touch handling for page navigation
+        let touchStartX = null;
+        let touchStartY = null;
+        let isSwiping = false;
+
+        document.querySelector('.content').addEventListener('touchstart', e => {
+            touchStartX = e.touches[0].clientX;
+            touchStartY = e.touches[0].clientY;
+            isSwiping = false;
+        }, { passive: true });
+
+        document.querySelector('.content').addEventListener('touchmove', e => {
+            if (touchStartX === null) return;
+            
+            const touchCurrentX = e.touches[0].clientX;
+            const touchCurrentY = e.touches[0].clientY;
+            const deltaX = touchStartX - touchCurrentX;
+            const deltaY = Math.abs(touchStartY - touchCurrentY);
+
+            // Check if horizontal swipe (deltaX) is greater than vertical movement (deltaY)
+            if (Math.abs(deltaX) > deltaY && Math.abs(deltaX) > 30) {
+                isSwiping = true;
+                e.preventDefault(); // Prevent scrolling when swiping
+            }
+        }, { passive: false });
+
+        document.querySelector('.content').addEventListener('touchend', e => {
+            if (!touchStartX || !isSwiping) return;
+
+            const touchEndX = e.changedTouches[0].clientX;
+            const deltaX = touchStartX - touchEndX;
+
+            // Minimum swipe distance threshold
+            if (Math.abs(deltaX) > 50) {
+                if (deltaX > 0 && currentPage < pages.length - 1) {
+                    // Swipe left -> next page
+                    currentPage++;
+                    displayPage(currentPage);
+                } else if (deltaX < 0 && currentPage > 0) {
+                    // Swipe right -> previous page
+                    currentPage--;
+                    displayPage(currentPage);
+                }
+            }
+
+            // Reset touch tracking
+            touchStartX = null;
+            touchStartY = null;
+            isSwiping = false;
+        });
+
+        // Vertical swipe for controller
         document.addEventListener('touchstart', e => {
             touchStartY = e.touches[0].screenY;
         }, { passive: true });
@@ -673,27 +703,6 @@
             if (pageIndex !== currentPage) {
                 currentPage = pageIndex;
                 displayPage(currentPage);
-            }
-        });
-
-        // Horizontal swipe for page navigation
-        let touchStartX = 0;
-        document.addEventListener('touchstart', e => {
-            touchStartX = e.touches[0].screenX;
-        }, { passive: true });
-
-        document.addEventListener('touchend', e => {
-            const touchEndX = e.changedTouches[0].screenX;
-            const diff = touchEndX - touchStartX;
-
-            if (Math.abs(diff) > 50) {
-                if (diff > 0 && currentPage > 0) {
-                    currentPage--;
-                    displayPage(currentPage);
-                } else if (diff < 0 && currentPage < pages.length - 1) {
-                    currentPage++;
-                    displayPage(currentPage);
-                }
             }
         });
 
@@ -746,5 +755,4 @@
         });
     </script>
 </body>
-
 </html>
