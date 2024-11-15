@@ -399,23 +399,33 @@
             span.textContent = decodeHTMLEntities(sentence);
 
             let popup = null;
+            let touchStartY = null;
             let touchMoved = false;
 
-            // Prevent text selection on touch devices
+            // Track initial touch position
             span.addEventListener('touchstart', (e) => {
+                touchStartY = e.touches[0].clientY;
                 touchMoved = false;
                 e.stopPropagation();
             }, { passive: true });
 
+            // Check if touch has moved significantly
             span.addEventListener('touchmove', (e) => {
-                touchMoved = true;
+                if (touchStartY !== null) {
+                    const touchDiff = Math.abs(e.touches[0].clientY - touchStartY);
+                    if (touchDiff > 10) { // Add threshold for movement
+                        touchMoved = true;
+                    }
+                }
                 e.stopPropagation();
             }, { passive: true });
 
             span.addEventListener('touchend', (e) => {
                 e.stopPropagation();
-                if (touchMoved) return;
-                handleSentenceClick(e);
+                if (!touchMoved) {
+                    handleSentenceClick(e);
+                }
+                touchStartY = null;
             });
 
             span.addEventListener('click', (e) => {
@@ -477,14 +487,11 @@
                 popup.appendChild(translatable);
                 popup.appendChild(closeButton);
 
-                // Prevent event propagation but don't auto-close
-                popup.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                });
-
+                // Prevent popup from closing during scroll
                 popup.addEventListener('touchstart', (e) => e.stopPropagation(), { passive: true });
                 popup.addEventListener('touchmove', (e) => e.stopPropagation(), { passive: true });
                 popup.addEventListener('touchend', (e) => e.stopPropagation());
+                popup.addEventListener('click', (e) => e.stopPropagation());
 
                 if (span.nextSibling) {
                     span.parentNode.insertBefore(popup, span.nextSibling);
