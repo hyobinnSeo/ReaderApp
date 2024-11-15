@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html translate="no">
+
 <head>
     <title>{{ filename }} - 읽기</title>
     <meta charset="utf-8">
@@ -284,6 +285,7 @@
         }
     </style>
 </head>
+
 <body class="notranslate">
     <!-- Sidebar -->
     <div class="sidebar">
@@ -395,30 +397,78 @@
             const span = document.createElement('span');
             span.className = 'sentence notranslate';
             span.textContent = decodeHTMLEntities(sentence);
-            
-            span.addEventListener('click', function() {
+
+            let popup = null;
+            let touchMoved = false;
+
+            // Prevent text selection on touch devices
+            span.addEventListener('touchstart', (e) => {
+                touchMoved = false;
+                e.stopPropagation();
+            }, { passive: true });
+
+            span.addEventListener('touchmove', (e) => {
+                touchMoved = true;
+                e.stopPropagation();
+            }, { passive: true });
+
+            span.addEventListener('touchend', (e) => {
+                e.stopPropagation();
+                if (touchMoved) return;
+                handleSentenceClick(e);
+            });
+
+            span.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if ('ontouchstart' in window) return;
+                handleSentenceClick(e);
+            });
+
+            function handleSentenceClick(e) {
+                e.preventDefault();
+                e.stopPropagation();
+
+                // Check for existing popup
                 const existing = span.nextElementSibling;
                 if (existing?.classList.contains('translation-popup')) {
-                    existing.remove();
                     return;
                 }
 
-                const popup = document.createElement('div');
+                // Create new popup
+                popup = document.createElement('div');
                 popup.className = 'translation-popup';
+
                 const translatable = document.createElement('span');
                 translatable.className = 'translatable';
                 translatable.setAttribute('translate', 'yes');
                 translatable.textContent = decodeHTMLEntities(sentence);
+
                 popup.appendChild(translatable);
+
+                // Add click handler to the popup to close it
+                popup.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    // Close popup regardless of where it was clicked inside
+                    popup.remove();
+                    popup = null;
+                });
+
+                // Prevent all event propagation for touch events
+                popup.addEventListener('touchstart', (e) => e.stopPropagation(), { passive: true });
+                popup.addEventListener('touchmove', (e) => e.stopPropagation(), { passive: true });
+                popup.addEventListener('touchend', (e) => {
+                    e.stopPropagation();
+                    // Close popup on touch end
+                    popup.remove();
+                    popup = null;
+                });
 
                 if (span.nextSibling) {
                     span.parentNode.insertBefore(popup, span.nextSibling);
                 } else {
                     span.parentNode.appendChild(popup);
                 }
-
-                popup.addEventListener('click', () => popup.remove());
-            });
+            }
 
             return span;
         }
@@ -452,13 +502,11 @@
         const cancelSettings = document.getElementById('cancelSettings');
         const fontSizeValue = document.getElementById('fontSizeValue');
 
-        // Store original settings
         let originalSettings = {
             fontSize: '16px',
             fontFamily: 'sans-serif'
         };
 
-        // Store temporary settings
         let tempSettings = {
             fontSize: '16px',
             fontFamily: 'sans-serif'
@@ -478,11 +526,11 @@
                 fontSize: document.querySelector('.content').style.fontSize || '16px',
                 fontFamily: document.querySelector('.content').style.fontFamily || 'sans-serif'
             };
-            
+
             fontSizeSlider.value = parseInt(originalSettings.fontSize);
             fontSizeValue.textContent = originalSettings.fontSize;
             fontFamilySelect.value = originalSettings.fontFamily;
-            
+
             settingsPopup.style.display = 'block';
         });
 
@@ -509,7 +557,7 @@
         });
 
         confirmSettings.addEventListener('click', () => {
-            originalSettings = {...tempSettings};
+            originalSettings = { ...tempSettings };
             closeSettingsPopup();
         });
 
@@ -529,16 +577,21 @@
             content.classList.toggle('sidebar-open');
         });
 
-        // Close sidebar when clicking outside
         document.addEventListener('click', (e) => {
-            if (!sidebar.contains(e.target) && 
-                !toggleSidebarBtn.contains(e.target) && 
+            if (!sidebar.contains(e.target) &&
+                !toggleSidebarBtn.contains(e.target) &&
                 sidebar.classList.contains('open')) {
                 closeSidebar();
             }
+
+            if (!settingsPopup.contains(e.target) &&
+                !settingsButton.contains(e.target) &&
+                settingsPopup.style.display === 'block') {
+                revertSettings();
+                closeSettingsPopup();
+            }
         });
 
-        // Prevent sidebar from closing when clicking inside it
         sidebar.addEventListener('click', (e) => {
             e.stopPropagation();
         });
@@ -558,24 +611,22 @@
             isControllerVisible = false;
         }
 
-        // Show controller on hover (desktop)
         controllerTrigger.addEventListener('mouseenter', showController);
         controller.addEventListener('mouseenter', showController);
         controller.addEventListener('mouseleave', hideController);
 
-        // Show controller on swipe up (mobile)
         let touchStartY = 0;
         document.addEventListener('touchstart', e => {
             touchStartY = e.touches[0].screenY;
-        });
+        }, { passive: true });
 
         document.addEventListener('touchend', e => {
             const touchEndY = e.changedTouches[0].screenY;
             const diff = touchEndY - touchStartY;
 
-            if (diff < -50) { // Swipe up
+            if (diff < -50) {
                 showController();
-            } else if (diff > 50) { // Swipe down
+            } else if (diff > 50) {
                 hideController();
             }
         });
@@ -589,7 +640,7 @@
 
         // Return to main
         document.getElementById('returnToMain').addEventListener('click', () => {
-            window.location.href = '/'; // Update this with your main page URL
+            window.location.href = '/';
         });
 
         // Page slider functionality
@@ -606,13 +657,13 @@
         let touchStartX = 0;
         document.addEventListener('touchstart', e => {
             touchStartX = e.touches[0].screenX;
-        });
+        }, { passive: true });
 
         document.addEventListener('touchend', e => {
             const touchEndX = e.changedTouches[0].screenX;
             const diff = touchEndX - touchStartX;
 
-            if (Math.abs(diff) > 50) { // Minimum swipe distance
+            if (Math.abs(diff) > 50) {
                 if (diff > 0 && currentPage > 0) {
                     currentPage--;
                     displayPage(currentPage);
@@ -645,33 +696,20 @@
             }, 250);
         });
 
-        // Close settings popup when clicking outside
-        window.addEventListener('click', (e) => {
-            if (!settingsPopup.contains(e.target) && 
-                !settingsButton.contains(e.target) && 
-                settingsPopup.style.display === 'block') {
-                revertSettings();
-                closeSettingsPopup();
-            }
-        });
-
         // Initialize the page
-        window.addEventListener('load', function() {
+        window.addEventListener('load', function () {
             const originalText = `{{ content }}`;
             pages = paginateText(originalText);
             displayPage(0);
 
-            // Set initial font size
             document.querySelector('.content').style.fontSize = '16px';
             fontSizeSlider.value = 16;
 
-            // Check system dark mode preference
             if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
                 document.body.classList.add('dark-mode');
                 isDarkMode = true;
             }
 
-            // Watch for system dark mode changes
             window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
                 if (!document.body.classList.contains('dark-mode') === e.matches) {
                     document.body.classList.toggle('dark-mode');
@@ -679,11 +717,11 @@
                 }
             });
 
-            // Initialize page slider
             const slider = document.querySelector('.page-slider input');
             slider.max = Math.max(100, pages.length);
             updateSlider(0);
         });
     </script>
 </body>
+
 </html>
