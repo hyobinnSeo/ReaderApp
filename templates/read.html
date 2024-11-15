@@ -195,6 +195,7 @@
             border-radius: 8px;
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
             z-index: 1002;
+            min-width: 300px;
         }
 
         .dark-mode .settings-popup {
@@ -203,7 +204,57 @@
         }
 
         .settings-option {
-            margin: 10px 0;
+            margin: 15px 0;
+        }
+
+        .settings-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .settings-title {
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+
+        .settings-buttons {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 20px;
+            gap: 10px;
+        }
+
+        .settings-button {
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s ease;
+        }
+
+        .settings-button.confirm {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        .settings-button.cancel {
+            background-color: #f0f0f0;
+            color: #333;
+        }
+
+        .dark-mode .settings-button.confirm {
+            background-color: #45a049;
+        }
+
+        .dark-mode .settings-button.cancel {
+            background-color: #2A354B;
+            color: #E7E9EF;
+        }
+
+        .settings-button:hover {
+            opacity: 0.9;
         }
 
         /* Icon styles */
@@ -266,8 +317,12 @@
 
     <!-- Settings popup -->
     <div class="settings-popup">
+        <div class="settings-header">
+            <span class="settings-title">Reading Settings</span>
+            <button class="icon-button" id="closeSettings">✕</button>
+        </div>
         <div class="settings-option">
-            <label>Font Size:</label>
+            <label>Font Size: <span id="fontSizeValue">16px</span></label>
             <input type="range" min="12" max="24" value="16" id="fontSizeSlider">
         </div>
         <div class="settings-option">
@@ -278,7 +333,10 @@
                 <option value="monospace">Monospace</option>
             </select>
         </div>
-        <button class="icon-button" id="closeSettings">✕</button>
+        <div class="settings-buttons">
+            <button class="settings-button cancel" id="cancelSettings">Cancel</button>
+            <button class="settings-button confirm" id="confirmSettings">Confirm</button>
+        </div>
     </div>
 
     <script>
@@ -286,7 +344,7 @@
         let currentPage = 0;
         let pages = [];
         let isDarkMode = false;
-        const pageHeight = window.innerHeight - 40; // Adjusted for better pagination
+        const pageHeight = window.innerHeight - 40;
 
         // Text handling functions
         function decodeHTMLEntities(text) {
@@ -309,7 +367,6 @@
             const sentences = splitIntoSentences(decodeHTMLEntities(text));
             const pages = [];
             let currentPage = [];
-            let currentHeight = 0;
 
             sentences.forEach(sentence => {
                 const sentenceEl = document.createElement('span');
@@ -385,14 +442,105 @@
             slider.value = Math.floor((pageIndex / (pages.length - 1)) * 99) + 1;
         }
 
+        // Settings functionality
+        const settingsButton = document.getElementById('readingSettings');
+        const settingsPopup = document.querySelector('.settings-popup');
+        const closeSettings = document.getElementById('closeSettings');
+        const fontSizeSlider = document.getElementById('fontSizeSlider');
+        const fontFamilySelect = document.getElementById('fontFamilySelect');
+        const confirmSettings = document.getElementById('confirmSettings');
+        const cancelSettings = document.getElementById('cancelSettings');
+        const fontSizeValue = document.getElementById('fontSizeValue');
+
+        // Store original settings
+        let originalSettings = {
+            fontSize: '16px',
+            fontFamily: 'sans-serif'
+        };
+
+        // Store temporary settings
+        let tempSettings = {
+            fontSize: '16px',
+            fontFamily: 'sans-serif'
+        };
+
+        function closeSettingsPopup() {
+            settingsPopup.style.display = 'none';
+        }
+
+        function revertSettings() {
+            document.querySelector('.content').style.fontSize = originalSettings.fontSize;
+            document.querySelector('.content').style.fontFamily = originalSettings.fontFamily;
+        }
+
+        settingsButton.addEventListener('click', () => {
+            originalSettings = {
+                fontSize: document.querySelector('.content').style.fontSize || '16px',
+                fontFamily: document.querySelector('.content').style.fontFamily || 'sans-serif'
+            };
+            
+            fontSizeSlider.value = parseInt(originalSettings.fontSize);
+            fontSizeValue.textContent = originalSettings.fontSize;
+            fontFamilySelect.value = originalSettings.fontFamily;
+            
+            settingsPopup.style.display = 'block';
+        });
+
+        fontSizeSlider.addEventListener('input', (e) => {
+            const newSize = `${e.target.value}px`;
+            fontSizeValue.textContent = newSize;
+            tempSettings.fontSize = newSize;
+            document.querySelector('.content').style.fontSize = newSize;
+        });
+
+        fontFamilySelect.addEventListener('change', (e) => {
+            tempSettings.fontFamily = e.target.value;
+            document.querySelector('.content').style.fontFamily = e.target.value;
+        });
+
+        closeSettings.addEventListener('click', () => {
+            revertSettings();
+            closeSettingsPopup();
+        });
+
+        cancelSettings.addEventListener('click', () => {
+            revertSettings();
+            closeSettingsPopup();
+        });
+
+        confirmSettings.addEventListener('click', () => {
+            originalSettings = {...tempSettings};
+            closeSettingsPopup();
+        });
+
         // Sidebar functionality
         const sidebar = document.querySelector('.sidebar');
         const content = document.querySelector('.content');
         const toggleSidebarBtn = document.getElementById('toggleSidebar');
 
-        toggleSidebarBtn.addEventListener('click', () => {
+        function closeSidebar() {
+            sidebar.classList.remove('open');
+            content.classList.remove('sidebar-open');
+        }
+
+        toggleSidebarBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
             sidebar.classList.toggle('open');
             content.classList.toggle('sidebar-open');
+        });
+
+        // Close sidebar when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!sidebar.contains(e.target) && 
+                !toggleSidebarBtn.contains(e.target) && 
+                sidebar.classList.contains('open')) {
+                closeSidebar();
+            }
+        });
+
+        // Prevent sidebar from closing when clicking inside it
+        sidebar.addEventListener('click', (e) => {
+            e.stopPropagation();
         });
 
         // Controller functionality
@@ -430,29 +578,6 @@
             } else if (diff > 50) { // Swipe down
                 hideController();
             }
-        });
-
-        // Settings functionality
-        const settingsButton = document.getElementById('readingSettings');
-        const settingsPopup = document.querySelector('.settings-popup');
-        const closeSettings = document.getElementById('closeSettings');
-        const fontSizeSlider = document.getElementById('fontSizeSlider');
-        const fontFamilySelect = document.getElementById('fontFamilySelect');
-
-        settingsButton.addEventListener('click', () => {
-            settingsPopup.style.display = 'block';
-        });
-
-        closeSettings.addEventListener('click', () => {
-            settingsPopup.style.display = 'none';
-        });
-
-        fontSizeSlider.addEventListener('input', (e) => {
-            document.querySelector('.content').style.fontSize = `${e.target.value}px`;
-        });
-
-        fontFamilySelect.addEventListener('change', (e) => {
-            document.querySelector('.content').style.fontFamily = e.target.value;
         });
 
         // Dark mode toggle
@@ -520,6 +645,16 @@
             }, 250);
         });
 
+        // Close settings popup when clicking outside
+        window.addEventListener('click', (e) => {
+            if (!settingsPopup.contains(e.target) && 
+                !settingsButton.contains(e.target) && 
+                settingsPopup.style.display === 'block') {
+                revertSettings();
+                closeSettingsPopup();
+            }
+        });
+
         // Initialize the page
         window.addEventListener('load', function() {
             const originalText = `{{ content }}`;
@@ -548,15 +683,6 @@
             const slider = document.querySelector('.page-slider input');
             slider.max = Math.max(100, pages.length);
             updateSlider(0);
-        });
-
-        // Close settings popup when clicking outside
-        window.addEventListener('click', (e) => {
-            if (!settingsPopup.contains(e.target) && 
-                !settingsButton.contains(e.target) && 
-                settingsPopup.style.display === 'block') {
-                settingsPopup.style.display = 'none';
-            }
         });
     </script>
 </body>
